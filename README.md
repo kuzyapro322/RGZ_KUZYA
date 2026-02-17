@@ -1,1 +1,0 @@
-# RGZ_KUZYA
