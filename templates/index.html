@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if session.is_admin %}
+<div class="admin-actions">
+    <a href="{{ url_for('admin.add_book') }}" class="btn btn-primary">➕ Добавить книгу</a>
+</div>
+{% endif %}
+<div class="filters-section">
+    <h2>Фильтры поиска</h2>
+    <form method="GET" action="{{ url_for('main.index') }}#books-grid" class="filter-form">
+        <div class="filter-row">
+            <input type="text" name="title" placeholder="Название книги" value="{{ filters.title }}">
+            
+            <!-- ЗАМЕНЯЕМ ИНПУТ АВТОРА НА ВЫПАДАЮЩИЙ СПИСОК -->
+            <select name="author" class="filter-select">
+                <option value="">Все авторы</option>
+                {% for author in authors %}
+                <option value="{{ author }}" {% if filters.author == author %}selected{% endif %}>
+                    {{ author }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <!-- ЗАМЕНЯЕМ ИНПУТ ИЗДАТЕЛЬСТВА НА ВЫПАДАЮЩИЙ СПИСОК -->
+            <select name="publisher" class="filter-select">
+                <option value="">Все издательства</option>
+                {% for publisher in publishers %}
+                <option value="{{ publisher }}" {% if filters.publisher == publisher %}selected{% endif %}>
+                    {{ publisher }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-row">
+            <div class="pages-range">
+                <label>Количество страниц:</label>
+                <input type="number" name="pages_min" placeholder="От" min="1" value="{{ filters.pages_min }}">
+                <span>-</span>
+                <input type="number" name="pages_max" placeholder="До" min="1" value="{{ filters.pages_max }}">
+            </div>
+        </div>
+        <div class="filter-buttons">
+            <button type="submit" class="btn btn-primary">Применить фильтры</button>
+            <a href="{{ url_for('main.index') }}#books-grid" class="btn btn-outline">Очистить</a>
+        </div>
+    </form>
+</div>
+
+<div class="sorting-section">
+    <h3>Сортировка:</h3>
+    <div class="sort-controls">
+        <form method="GET" action="{{ url_for('main.index') }}#books-grid" id="sortForm">
+            <!-- Сохраняем фильтры при сортировке -->
+            <input type="hidden" name="title" value="{{ filters.title }}">
+            <input type="hidden" name="author" value="{{ filters.author }}">
+            <input type="hidden" name="publisher" value="{{ filters.publisher }}">
+            <input type="hidden" name="pages_min" value="{{ filters.pages_min }}">
+            <input type="hidden" name="pages_max" value="{{ filters.pages_max }}">
+            
+            <select name="sort_field" onchange="document.getElementById('sortForm').submit()">
+                <option value="title" {% if sort_field == 'title' %}selected{% endif %}>Название</option>
+                <option value="author" {% if sort_field == 'author' %}selected{% endif %}>Автор</option>
+                <option value="pages" {% if sort_field == 'pages' %}selected{% endif %}>Количество страниц</option>
+                <option value="publisher" {% if sort_field == 'publisher' %}selected{% endif %}>Издательство</option>
+            </select>
+            
+            <select name="sort_order" onchange="document.getElementById('sortForm').submit()">
+                <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>По возрастанию</option>
+                <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>По убыванию</option>
+            </select>
+        </form>
+    </div>
+</div>
+
+<div class="books-header">
+    <h2>Список книг</h2>
+    <div class="books-count">Найдено книг: {{ total_count }}</div>
+</div>
+
+<div class="books-grid">
+    {% for book in books %}
+    <div class="book-card">
+        <img src="/static/pic/{{ book.cover_image or 'default_cover.jpg' }}" 
+                alt="{{ book.title }}"
+                {% if session.username %}
+                onclick="showBook(this)"
+                data-title="{{ book.title }}"
+                data-author="{{ book.author }}"
+                data-pages="{{ book.pages }}"
+                data-publisher="{{ book.publisher }}"
+                {% endif %}
+                onerror="this.src='/static/default_cover.jpg'">
+        <h3>{{ book.title }}</h3>
+        <p><strong>Автор:</strong> {{ book.author }}</p>
+        <p><strong>Страниц:</strong> {{ book.pages }}</p>
+        <p><strong>Издательство:</strong> {{ book.publisher }}</p>
+
+        {% if session.is_admin %}
+        <div class="book-actions">
+            <a href="{{ url_for('admin.edit_book', book_id=book.id) }}" 
+               class="btn btn-outline btn-small">✏️ Редактировать</a>
+            <form method="POST" 
+                  action="{{ url_for('admin.delete_book', book_id=book.id) }}" 
+                  class="delete-form"
+                  onsubmit="return confirm('Удалить книгу «{{ book.title }}»?')">
+                <button type="submit" class="btn btn-danger btn-small">🗑️ Удалить</button>
+            </form>
+        </div>
+        {% endif %}
+
+    </div>
+    {% else %}
+    <div class="no-books">
+        <p>Книги по заданным фильтрам не найдены</p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- КНОПКА "ПОКАЗАТЬ ЕЩЕ" -->
+{% if has_next %}
+<div class="load-more-section">
+    <a href="{{ url_for('main.index', page=current_page+1, sort_field=sort_field, sort_order=sort_order,
+                       title=filters.title, author=filters.author, publisher=filters.publisher,
+                       pages_min=filters.pages_min, pages_max=filters.pages_max) }}" 
+       class="btn btn-primary btn-large"
+       onclick="return loadMoreBooks(this)">
+        Показать еще
+    </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Библиотека книг</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Онлайн библиотека</h1>
+            <div class="user-info">
+                {% if session.username %}
+                    <span>Привет, <strong>{{ session.username }}</strong></span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline">Выйти</a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Войти</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-outline">Регистрация</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Сообщения flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="student-info">
+            <p><strong>Студент:</strong> Кузнецов Кирилл Сергеевич</p>
+            <p><strong>Группа:</strong> ФБИ-34</p>
+        </div>
+        
+        {% block content %}{% endblock %}
+    </main>
+        <!-- Простой JavaScript для кнопки "Показать еще" -->
+    <script>
+    function loadMoreBooks(button) {
+        // Показываем загрузку
+        button.innerHTML = 'Загружаем...';
+        button.disabled = true;
+        
+        // Получаем URL из href кнопки
+        const url = button.href;
+        
+        // Делаем AJAX запрос
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                // Создаем временный элемент для парсинга HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                
+                // Находим новые книги в полученном HTML
+                const newBooksGrid = tempDiv.querySelector('.books-grid');
+                const newLoadMoreSection = tempDiv.querySelector('.load-more-section');
+                
+                if (newBooksGrid) {
+                    // Добавляем новые книги к существующим
+                    const currentBooksGrid = document.querySelector('.books-grid');
+                    currentBooksGrid.innerHTML += newBooksGrid.innerHTML;
+                    
+                    // Обновляем счетчик книг
+                    const booksCount = tempDiv.querySelector('.books-count');
+                    if (booksCount) {
+                        document.querySelector('.books-count').innerHTML = booksCount.innerHTML;
+                    }
+                }
+                
+                // Обновляем кнопку "Показать еще" или скрываем её
+                if (newLoadMoreSection) {
+                    button.outerHTML = newLoadMoreSection.innerHTML;
+                } else {
+                    // Если кнопки больше нет, показываем сообщение
+                    button.outerHTML = '<div class="all-books-loaded"><p>Все книги загружены!</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                button.innerHTML = 'Ошибка, попробуйте снова';
+                button.disabled = false;
+            });
+        
+        // Предотвращаем переход по ссылке
+        return false;
+    }
+    function showBook(imgElement) {
+        // Берем данные из data-атрибутов
+        document.getElementById('modalImg').src = imgElement.src;
+        document.getElementById('modalTitle').textContent = imgElement.dataset.title;
+        document.getElementById('modalAuthor').textContent = imgElement.dataset.author;
+        document.getElementById('modalPages').textContent = imgElement.dataset.pages;
+        document.getElementById('modalPublisher').textContent = imgElement.dataset.publisher;
+        
+        // Показываем модальное окно
+        document.getElementById('bookModal').style.display = 'block';
+    }
+
+    function hideBook() {
+        document.getElementById('bookModal').style.display = 'none';
+    }
+
+    // Закрытие на ESC
+    document.onkeydown = function(e) {
+        if (e.key === 'Escape') hideBook();
+    };
+    </script>
+</body>
+</html>

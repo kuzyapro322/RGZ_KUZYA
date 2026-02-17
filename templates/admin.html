@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-header">
+    <h2>Панель администратора</h2>
+    <p>Управление книгами в библиотеке</p>
+</div>
+
+<div class="admin-actions">
+    <a href="{{ url_for('admin.add_book') }}" class="btn btn-primary">Добавить новую книгу</a>
+</div>
+
+<div class="admin-books-list">
+    <h3>Все книги в библиотеке ({{ books|length }})</h3>
+    
+    {% if books %}
+    <div class="books-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Обложка</th>
+                    <th>Название</th>
+                    <th>Автор</th>
+                    <th>Страниц</th>
+                    <th>Издательство</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>{{ book.id }}</td>
+                    <td>
+                        <img src="/static/pic/{{ book.cover_image or 'default_cover.jpg' }}" 
+                             alt="{{ book.title }}" class="book-cover-small"
+                             onerror="this.src='/static/default_cover.jpg'">
+                    </td>
+                    <td>{{ book.title }}</td>
+                    <td>{{ book.author }}</td>
+                    <td>{{ book.pages }}</td>
+                    <td>{{ book.publisher }}</td>
+                    <td class="actions">
+                        <a href="{{ url_for('admin.edit_book', book_id=book.id) }}" 
+                           class="btn btn-outline btn-small">✏️ Редактировать</a>
+                        <form method="POST" 
+                              action="{{ url_for('admin.delete_book', book_id=book.id) }}" 
+                              class="delete-form"
+                              onsubmit="return confirm('Удалить книгу «{{ book.title }}»?')">
+                            <button type="submit" class="btn btn-danger btn-small">🗑️ Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="no-books">
+        <p>В библиотеке пока нет книг</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
